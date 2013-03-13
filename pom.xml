@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+	<groupId>org.fuwjin</groupId>
+	<artifactId>wheatgrass</artifactId>
+	<version>0.0.2-SNAPSHOT</version>
+	<name>Wheatgrass</name>
+	<description>Healthier Dependency Injection for Java</description>
+	<url>http://github.com/fuwjax/wheatgrass</url>
+	<scm>
+		<connection>scm:git:git@github.com:fuwjax/wheatgrass.git</connection>
+		<url>scm:git:git@github.com:fuwjax/wheatgrass.git</url>
+		<developerConnection>scm:git:git@github.com:fuwjax/wheatgrass.git</developerConnection>
+	</scm>
+	<licenses>
+		<license>
+			<name>Eclipse Public License - Version 1.0</name>
+			<url>http://www.eclipse.org/legal/epl-v10.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>fuwjax</id>
+			<name>Michael Doberenz</name>
+			<email>fuwjax AT gmail DOT com</email>
+			<organization>EchoVantage</organization>
+			<organizationUrl>http://echovantage.com</organizationUrl>
+			<roles>
+				<role>chief data scientist</role>
+				<role>developer</role>
+			</roles>
+			<timezone>-6</timezone>
+			<url>http://fuwjax.org</url>
+		</developer>
+	</developers>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.10</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
