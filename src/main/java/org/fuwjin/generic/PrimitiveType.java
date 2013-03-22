@@ -1,5 +1,8 @@
 package org.fuwjin.generic;
 
+import org.fuwjin.test.PrimitiveTest;
+import org.fuwjin.util.FilterSet;
+
 
 public class PrimitiveType implements Generic{
 	private Class<?> cls;
@@ -40,6 +43,21 @@ public class PrimitiveType implements Generic{
 			return wrapper.isAssignableTo(type);
 		}
 	}
+	
+	@Override
+	public boolean isInstance(Object object) {
+		return wrapper.isInstance(object);
+	}
+	
+	@Override
+	public boolean contains(Generic type) {
+		return type instanceof PrimitiveTest && getRawType().equals(type.getRawType());
+	}
+	
+	@Override
+	public FilterSet<GenericAction> actions() {
+		return wrapper.actions();
+	}
 
 	void setWrapper(WrapperType wrapper) {
 		this.wrapper = wrapper;
@@ -52,5 +70,18 @@ public class PrimitiveType implements Generic{
 	@Override
 	public String toString() {
 		return cls.getCanonicalName();
+	}
+	
+	@Override
+	public GenericValue valueOf(final Object value) {
+		if(!isInstance(value)){
+			throw new IllegalArgumentException("Unexpected value: "+value);
+		}
+		return new AbstractGenericValue(this, value){
+			@Override
+			public FilterSet<GenericAction> actions() {
+				return wrapper.valueOf(value).actions();
+			}
+		};
 	}
 }

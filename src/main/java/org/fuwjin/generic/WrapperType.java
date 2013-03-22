@@ -14,8 +14,7 @@ public class WrapperType extends GenericType {
 	}
 
 	@Override
-	public boolean isAssignableTo(Generic t) {
-		Generic type = Generics.genericOf(t);
+	public boolean isAssignableTo(Generic type) {
 		if(type instanceof PrimitiveType){
 			return primitive.isAssignableTo(type);
 		}

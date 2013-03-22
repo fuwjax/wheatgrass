@@ -1,8 +1,8 @@
 package org.fuwjin.generic;
 
-import java.lang.reflect.Type;
+import org.fuwjin.util.FilterSet;
 
-public interface Generic extends Type{
+public interface Generic {
 	Class<?> getRawType();
 	
 	Generic supertype();
@@ -11,6 +11,11 @@ public interface Generic extends Type{
 	
 	boolean isAssignableTo(Generic type);
 	
-	@Override
-	public boolean equals(Object obj);
+	boolean contains(Generic type);
+	
+	boolean isInstance(Object object);
+	
+	FilterSet<GenericAction> actions();
+	
+	GenericValue valueOf(Object value);
 }

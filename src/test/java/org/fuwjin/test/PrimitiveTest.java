@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.fuwjin.generic.Generic;
+import org.fuwjin.generic.GenericTypeLiteral;
 import org.fuwjin.generic.Generics;
 import org.fuwjin.util.RuntimeClassLoader;
 import org.junit.Test;
@@ -69,16 +70,51 @@ public class PrimitiveTest {
 	public List<? extends String> extendsStringList;
 	public List<? extends CharSequence> extendsCharSequenceList;
 	public List<? extends CharSequence> extendsCharSequenceAndSerializableList;
+	public List rawList;
+	public List<?> openList;
 	
 	@Test
 	public void testFields(){
 		for(Field from: PrimitiveTest.class.getFields()){
 			for(Field to: PrimitiveTest.class.getFields()){
-				Generic fromType = Generics.genericOf(from.getGenericType());
-				Generic toType = Generics.genericOf(to.getGenericType());
-				assertEquals(fromType+" to "+toType, isAssignable(from, to), fromType.isAssignableTo(toType));
+				convert(from, to);
 			}
 		}
+	}
+
+	@Test
+	public void testLiterals() throws NoSuchFieldException, SecurityException{
+		Field literalField = PrimitiveTest.class.getField("stringList");
+		Generic literalType = Generics.genericOf(literalField.getGenericType());
+		GenericTypeLiteral<List<String>> literal = new GenericTypeLiteral<List<String>>(){};
+		for(Field other: PrimitiveTest.class.getFields()){
+			Generic otherType = Generics.genericOf(other.getGenericType());
+			assertEquals(otherType+" to "+literalType, isAssignable(other, literalField), otherType.isAssignableTo(literal));
+			assertEquals(literalType+" to "+otherType, isAssignable(literalField, other), literal.isAssignableTo(otherType));
+		}
+	}
+
+	@Test
+	public void testSingleLiteral() throws NoSuchFieldException, SecurityException{
+		Field literalField = PrimitiveTest.class.getField("stringList");
+		Generic literalType = Generics.genericOf(literalField.getGenericType());
+		GenericTypeLiteral<List<String>> literal = new GenericTypeLiteral<List<String>>(){};
+		Field other = PrimitiveTest.class.getField("stringList");
+		Generic otherType = Generics.genericOf(other.getGenericType());
+		assertEquals(otherType+" to "+literalType, isAssignable(other, literalField), otherType.isAssignableTo(literal));
+	}
+
+	private void convert(Field from, Field to) {
+		Generic fromType = Generics.genericOf(from.getGenericType());
+		Generic toType = Generics.genericOf(to.getGenericType());
+		assertEquals(fromType+" to "+toType, isAssignable(from, to), fromType.isAssignableTo(toType));
+	}
+	
+	@Test
+	public void singleTest() throws NoSuchFieldException, SecurityException{
+		Field from = PrimitiveTest.class.getField("rawList");
+		Field to = PrimitiveTest.class.getField("extendsStringList");
+		convert(from, to);
 	}
 
 	private boolean isAssignable(Field from, Field to) {

@@ -3,7 +3,16 @@ package org.fuwjin.generic;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 
-public class GenericArray implements Generic, GenericArrayType {
+import org.fuwjin.generic.action.ArrayGetAction;
+import org.fuwjin.generic.action.ArrayInstanceGetAction;
+import org.fuwjin.generic.action.ArrayInstanceLengthAction;
+import org.fuwjin.generic.action.ArrayInstanceSetAction;
+import org.fuwjin.generic.action.ArrayLengthAction;
+import org.fuwjin.generic.action.ArrayNewAction;
+import org.fuwjin.generic.action.ArraySetAction;
+import org.fuwjin.util.FilterSet;
+
+public class GenericArray implements Generic {
 	private Generic component;
 	private Generic supertype;
 	private Generic[] interfaces;
@@ -40,11 +49,48 @@ public class GenericArray implements Generic, GenericArrayType {
 	public Generic[] interfaces() {
 		return interfaces;
 	}
+	
+	@Override
+	public FilterSet<GenericAction> actions() {
+		FilterSet<GenericAction> actions = new FilterSet<GenericAction>();
+		actions.add(new ArrayLengthAction(this));
+		actions.add(new ArrayNewAction(this));
+		actions.add(new ArraySetAction(this));
+		actions.add(new ArrayGetAction(this));
+		return actions;
+	}
+	
+	@Override
+	public GenericValue valueOf(final Object value) {
+		if(!isInstance(value)){
+			throw new IllegalArgumentException("Unexpected value: "+value);
+		}
+		return new AbstractGenericValue(this, value){
+			@Override
+			public FilterSet<GenericAction> actions() {
+				FilterSet<GenericAction> actions = new FilterSet<GenericAction>();
+				actions.add(new ArrayInstanceLengthAction(GenericArray.this, value));
+				actions.add(new ArrayInstanceSetAction(GenericArray.this, value));
+				actions.add(new ArrayInstanceGetAction(GenericArray.this, value));
+				return actions;
+			}
+		};
+	}
+	
+	@Override
+	public boolean isInstance(Object object) {
+		return getRawType().isInstance(object);
+	}
+	
+	@Override
+	public boolean contains(Generic type) {
+		return type instanceof GenericArray && getGenericComponentType().contains(((GenericArray)type).getGenericComponentType());
+	}
 
 	@Override
 	public boolean isAssignableTo(Generic type) {
 		if(type instanceof GenericArgument){
-			return ((GenericArgument)type).contains(this);
+			return type.contains(this);
 		}
 		if(type instanceof GenericArray){
 			GenericArray arr = (GenericArray)type;
@@ -65,7 +111,6 @@ public class GenericArray implements Generic, GenericArrayType {
 		return false;
 	}
 
-	@Override
 	public Generic getGenericComponentType() {
 		return component;
 	}

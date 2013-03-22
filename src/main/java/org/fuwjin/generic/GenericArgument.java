@@ -1,13 +1,15 @@
 package org.fuwjin.generic;
 
-import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class GenericArgument implements Generic, WildcardType {
+import org.fuwjin.util.FilterSet;
+
+public class GenericArgument implements Generic {
 	private Generic[] upper;
 	private Generic[] lower;
+	private boolean raw;
 	
 	public GenericArgument(){
 		// must call init
@@ -19,31 +21,37 @@ public class GenericArgument implements Generic, WildcardType {
 	}
 	
 	@Override
-	public Generic[] getUpperBounds() {
-		return upper;
-	}
-
-	@Override
-	public Generic[] getLowerBounds() {
-		return lower;
-	}
-
-	@Override
 	public Class<?> getRawType() {
-		return getUpperBounds()[0].getRawType();
+		throw new UnsupportedOperationException();
 	}
-
+	
 	@Override
 	public Generic supertype() {
 		if(getRawType().isInterface()){
 			return Generics.OBJECT;
 		}
-		return getUpperBounds()[0];
+		return upper[0];
+	}
+	
+	@Override
+	public FilterSet<GenericAction> actions() {
+		return new FilterSet<GenericAction>();
+	}
+	
+	@Override
+	public boolean isInstance(Object object) {
+		for(Generic bound: upper){
+			if(!bound.isInstance(object)){
+				return false;
+			}
+		}
+		//TODO handle lower bounds?
+		return true;
 	}
 
 	@Override
 	public Generic[] interfaces() {
-		Generic[] ifaces = getUpperBounds();
+		Generic[] ifaces = upper;
 		if(getRawType().isInterface()){
 			return ifaces;
 		}
@@ -52,17 +60,20 @@ public class GenericArgument implements Generic, WildcardType {
 
 	@Override
 	public boolean isAssignableTo(Generic type) {
+		if(raw){
+			return true;
+		}
 		if(type instanceof GenericArgument){
 			GenericArgument arg = (GenericArgument)type;
-			for(Generic b: getUpperBounds()){
+			for(Generic b: upper){
 				if(!arg.contains(b)){
 					return false;
 				}
 			}
-			if(getLowerBounds().length == 0){
-				return arg.getLowerBounds().length == 0;
+			if(lower.length == 0){
+				return arg.lower.length == 0;
 			}
-			for(Generic b: getLowerBounds()){
+			for(Generic b: lower){
 				if(!arg.contains(b)){
 					return false;
 				}
@@ -71,15 +82,16 @@ public class GenericArgument implements Generic, WildcardType {
         }
 		return false;
 	}
-
+	
 	public GenericArgument init(Generic[] bounds, Generic actual) {
 		if(actual == null){
 			this.lower = Generics.NONE;
 			this.upper = bounds;
+			raw = true;
 		}else if(actual instanceof GenericArgument){
 			GenericArgument argument = (GenericArgument)actual;
-			this.lower = argument.getLowerBounds();
-			List<Generic> uppers = new ArrayList<Generic>(Arrays.asList(argument.getUpperBounds()));
+			this.lower = argument.lower;
+			List<Generic> uppers = new ArrayList<Generic>(Arrays.asList(argument.upper));
 			bounds: for(Generic b: bounds){
 				for(Generic u: uppers){
 					if(u.isAssignableTo(b)){
@@ -89,6 +101,7 @@ public class GenericArgument implements Generic, WildcardType {
 				uppers.add(b);
 			}
 			this.upper = uppers.toArray(Generics.NONE);
+			raw = argument.raw;
 		}else{
 			this.upper = new Generic[]{actual};
 			this.lower = upper;
@@ -96,13 +109,14 @@ public class GenericArgument implements Generic, WildcardType {
 		return this;
 	}
 
+	@Override
 	public boolean contains(Generic type) {
-		for(Generic b: getUpperBounds()){
+		for(Generic b: upper){
 			if(!type.isAssignableTo(b)){
 				return false;
 			}
 		}
-		for(Generic b: getLowerBounds()){
+		for(Generic b: lower){
 			if(!b.isAssignableTo(type)){
 				return false;
 			}
@@ -115,5 +129,30 @@ public class GenericArgument implements Generic, WildcardType {
 			return upper[0];
 		}
 		return this;
+	}
+	
+	@Override
+	public GenericValue valueOf(Object value) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder("?");
+		if(upper.length > 1 || !Object.class.equals(upper[0].getRawType())){
+			String delim = " extends ";
+			for(Generic b: upper){
+				builder.append(delim).append(b);
+				delim = " & ";
+			}
+		}
+		if(lower.length > 0){
+			String delim = " super ";
+			for(Generic b: lower){
+				builder.append(delim).append(b);
+				delim = " & ";
+			}
+		}
+		return builder.toString();
 	}
 }

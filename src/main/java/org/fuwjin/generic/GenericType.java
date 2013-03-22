@@ -1,6 +1,10 @@
 package org.fuwjin.generic;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -10,7 +14,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class GenericType implements Generic, ParameterizedType {
+import org.fuwjin.generic.action.ConstructorAction;
+import org.fuwjin.generic.action.FieldAccessAction;
+import org.fuwjin.generic.action.FieldMutateAction;
+import org.fuwjin.generic.action.InstanceFieldAccessAction;
+import org.fuwjin.generic.action.InstanceFieldMutateAction;
+import org.fuwjin.generic.action.InstanceMethodAction;
+import org.fuwjin.generic.action.MethodAction;
+import org.fuwjin.generic.action.StaticFieldAccessAction;
+import org.fuwjin.generic.action.StaticFieldMutateAction;
+import org.fuwjin.generic.action.StaticMethodAction;
+import org.fuwjin.util.FilterSet;
+
+public class GenericType implements Generic {
 	private ParameterizedType p;
 	private Class<?> c;
 	private Generic s;
@@ -18,23 +34,20 @@ public class GenericType implements Generic, ParameterizedType {
 	private GenericType owner;
 	private Generic[] args;
 	private Map<TypeVariable<?>, Generic> argMap;
+	private FilterSet<GenericAction> actions;
+	private boolean raw;
 
 	public GenericType(Class<?> c) {
 		this.c = c;
 		this.owner = c.getDeclaringClass() == null ? null : new GenericType(
 				c.getDeclaringClass());
+		this.raw = true;
 	}
 
 	public GenericType(ParameterizedType p) {
 		this.p = p;
 		c = (Class<?>) p.getRawType();
-		if (p.getOwnerType() instanceof Class) {
-			owner = new GenericType((Class<?>) p.getOwnerType());
-		} else if (p.getOwnerType() instanceof ParameterizedType) {
-			owner = new GenericType((ParameterizedType) p.getOwnerType());
-		} else if (p.getOwnerType() != null) {
-			throw new UnsupportedOperationException();
-		}
+		owner = (GenericType)Generics.genericOf(p.getOwnerType());
 	}
 
 	public GenericType(Class<?> raw, GenericType owner, Generic... args) {
@@ -73,7 +86,7 @@ public class GenericType implements Generic, ParameterizedType {
 		return s;
 	}
 
-	private Generic[] subst(Type[] ts) {
+	protected Generic[] subst(Type[] ts) {
 		Generic[] gs = new Generic[ts.length];
 		for (int i = 0; i < ts.length; i++) {
 			gs[i] = subst(ts[i]);
@@ -108,7 +121,7 @@ public class GenericType implements Generic, ParameterizedType {
 		}
 	}
 
-	private Generic subst(Type t) {
+	protected Generic subst(Type t) {
 		if(t instanceof Generic){
 			throw new UnsupportedOperationException();
 		}
@@ -151,19 +164,10 @@ public class GenericType implements Generic, ParameterizedType {
 			return true;
 		}
 		if(type instanceof GenericArgument){
-			return ((GenericArgument)type).contains(this);
+			return type.contains(this);
 		}
-		if (type instanceof GenericType) {
-			GenericType pt = (GenericType) type;
-			if (getRawType().equals(pt.getRawType())) {
-				for (int i = 0; i < pt.getActualTypeArguments().length; i++) {
-					if (!getActualTypeArguments()[i].isAssignableTo(pt
-							.getActualTypeArguments()[i])) {
-						return false;
-					}
-				}
-				return true;
-			}
+		if (Objects.equals(getRawType(),type.getRawType())) {
+			return type.contains(this);
 		}
 		if (supertype().isAssignableTo(type)) {
 			return true;
@@ -175,24 +179,93 @@ public class GenericType implements Generic, ParameterizedType {
 		}
 		return false;
 	}
-
+	
 	@Override
+	public boolean isInstance(Object object) {
+		return c.isInstance(object);
+	}
+	
+	@Override
+	public FilterSet<GenericAction> actions() {
+		if(actions == null){
+			actions = new FilterSet<GenericAction>();
+			for(Constructor<?> cons: c.getDeclaredConstructors()){
+				actions.add(new ConstructorAction(this, cons, subst(cons.getGenericParameterTypes())));
+			}
+			for(Field field: c.getDeclaredFields()){
+				if(Modifier.isStatic(field.getModifiers())){
+					actions.add(new StaticFieldAccessAction(this, field, subst(field.getGenericType())));
+					actions.add(new StaticFieldMutateAction(this, field, subst(field.getGenericType())));
+				}else{
+					actions.add(new FieldAccessAction(this, field, subst(field.getGenericType())));
+					actions.add(new FieldMutateAction(this, field, subst(field.getGenericType())));
+				}
+			}
+			for(Method method: c.getDeclaredMethods()){
+				if(Modifier.isStatic(method.getModifiers())){
+					actions.add(new StaticMethodAction(this, method, subst(method.getGenericReturnType()), subst(method.getGenericParameterTypes())));
+				}else{
+					actions.add(new MethodAction(this, method, subst(method.getGenericReturnType()), subst(method.getGenericParameterTypes())));
+				}
+			}
+		}
+		return actions;
+	}
+	
+	@Override
+	public GenericValue valueOf(final Object value) {
+		if(!isInstance(value)){
+			throw new IllegalArgumentException("Unexpected value: "+value);
+		}
+		return new AbstractGenericValue(this, value){
+			@Override
+			public FilterSet<GenericAction> actions() {
+				FilterSet<GenericAction> actions = new FilterSet<GenericAction>();
+				for(Field field: c.getDeclaredFields()){
+					if(!Modifier.isStatic(field.getModifiers())){
+						actions.add(new InstanceFieldAccessAction(GenericType.this, value, field, subst(field.getGenericType())));
+						actions.add(new InstanceFieldMutateAction(GenericType.this, value, field, subst(field.getGenericType())));
+					}
+				}
+				for(Method method: c.getDeclaredMethods()){
+					if(!Modifier.isStatic(method.getModifiers())){
+						actions.add(new InstanceMethodAction(GenericType.this, value, method, subst(method.getGenericReturnType()), subst(method.getGenericParameterTypes())));
+					}
+				}
+				return actions;
+			}
+		};
+	}
+
 	public GenericType getOwnerType() {
 		return owner;
 	}
 
-	@Override
 	public Generic[] getActualTypeArguments() {
 		initArgs();
 		return args;
 	}
-
+	
+	@Override
+	public boolean contains(Generic type) {
+		GenericType pt = (GenericType) type;
+		if (getRawType().equals(pt.getRawType())) {
+			for (int i = 0; i < pt.getActualTypeArguments().length; i++) {
+				if (!pt.getActualTypeArguments()[i].isAssignableTo(getActualTypeArguments()[i])) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		if (p != null) {
 			return p.toString();
 		}
-		if (getActualTypeArguments().length == 0) {
+		if (getActualTypeArguments().length == 0 || raw) {
 			return getRawType().getCanonicalName();
 		}
 		String argString = Arrays.toString(getActualTypeArguments());
@@ -203,9 +276,9 @@ public class GenericType implements Generic, ParameterizedType {
 	@Override
 	public boolean equals(Object obj) {
 		try {
-			ParameterizedType o = (ParameterizedType) obj;
-			return getRawType().equals(o.getRawType())
-					&& getOwnerType().equals(o.getOwnerType())
+			GenericType o = (GenericType) obj;
+			return Objects.equals(getRawType(),o.getRawType())
+					&& Objects.equals(getOwnerType(),o.getOwnerType())
 					&& Arrays.equals(getActualTypeArguments(),
 							o.getActualTypeArguments());
 		} catch (Exception e) {
