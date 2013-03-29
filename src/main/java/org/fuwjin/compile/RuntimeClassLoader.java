@@ -8,7 +8,7 @@
  * Contributors:
  *     Michael Doberenz - initial API and implementation
  ******************************************************************************/
-package org.fuwjin.util;
+package org.fuwjin.compile;
 
 import static javax.tools.ToolProvider.getSystemJavaCompiler;
 
@@ -17,6 +17,12 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -34,15 +40,42 @@ import javax.tools.StandardJavaFileManager;
  * A ClassLoader which compiles source code at runtime in memory.
  */
 public class RuntimeClassLoader extends ClassLoader {
-   private final ConcurrentMap<String, BufferedFileObject> files = new ConcurrentHashMap<String, BufferedFileObject>();
+	private static final JavaCompiler compiler = getSystemJavaCompiler();
+   private final ConcurrentMap<String, ClassFileObject> files = new ConcurrentHashMap<String, ClassFileObject>();
    private final ForwardingJavaFileManager<StandardJavaFileManager> manager = new ForwardingJavaFileManager<StandardJavaFileManager>(
-         getStandardFileManager()) {
+         compiler.getStandardFileManager(null, null, null)) {
       @Override
       public JavaFileObject getJavaFileForOutput(final Location location, final String className, final Kind kind,
             final FileObject sibling) throws IOException {
-         return getFile(className);
+         final ClassFileObject file = new ClassFileObject(className, kind);
+         ClassFileObject old = files.putIfAbsent(className, file);
+         return old == null ? file : old;
       }
    };
+   
+   private Writer log;
+   
+   public RuntimeClassLoader(){
+      log = new StringWriter();
+   }
+   
+   public RuntimeClassLoader(OutputStream logStream){
+   	 log = new OutputStreamWriter(logStream);
+   }
+   
+   public boolean compile(final Path root) throws IOException{
+      final Set<BinarySourceFileObject> compUnit = new HashSet<BinarySourceFileObject>();
+   	Files.walkFileTree(root, new SimpleFileVisitor<Path>(){
+			@Override
+         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				if(file.endsWith(".java")){
+					compUnit.add(new BinarySourceFileObject(root.relativize(file).toString(), Files.readAllBytes(file)));
+				}
+	         return FileVisitResult.CONTINUE;
+         }
+   	});
+   	return compile(compUnit);
+   }
 
    /**
     * Compiles the {@code source} java code into the class {@code name}.
@@ -50,49 +83,28 @@ public class RuntimeClassLoader extends ClassLoader {
     * @return true if the source code compiled, false otherwise
     */
    public boolean compile(final Map<String, String> sources) {
-      final Set<BufferedFileObject> compUnit = new HashSet<BufferedFileObject>();
+      final Set<SourceFileObject> compUnit = new HashSet<SourceFileObject>();
       for(final Map.Entry<String, String> entry: sources.entrySet()) {
-         compUnit.add(new BufferedFileObject(entry.getKey(), entry.getValue()));
+         compUnit.add(new SourceFileObject(entry.getKey(), entry.getValue()));
       }
-      final JavaCompiler compiler = getSystemJavaCompiler();
-      final OutputStreamWriter log = new OutputStreamWriter(System.err);
-      return compiler.getTask(log, manager, null, null, null, compUnit).call();
+      return compile(compUnit);
+   }
+
+	public boolean compile(final Set<? extends JavaFileObject> compUnit) {
+	   return compiler.getTask(log, manager, null, null, null, compUnit).call();
+   }
+   
+   public boolean compile(String name, String source) {
+   	return compile(Collections.singletonMap(name, source));
    }
 
    @Override
    protected Class<?> findClass(final String name) throws ClassNotFoundException {
-      final BufferedFileObject file = files.get(name);
+      final ClassFileObject file = files.get(name);
       if(file == null) {
          throw new ClassNotFoundException(name);
       }
-      final byte[] b = file.getBytes();
+      final byte[] b = file.toBytes();
       return defineClass(name, b, 0, b.length);
    }
-
-   /**
-    * Returns the file object for the {@code className}.
-    * @param className the name of the file object
-    * @return the file object
-    */
-   JavaFileObject getFile(final String className) {
-      final BufferedFileObject file = new BufferedFileObject(className);
-      files.put(className, file);
-      return file;
-   }
-
-   private StandardJavaFileManager getStandardFileManager() {
-      return getSystemJavaCompiler().getStandardFileManager(null, null, null);
-   }
-
-	public boolean compile(String name, String source) {
-		return compile(name, source, System.err);
-	}
-
-	public boolean compile(String name, String source, OutputStream logStream) {
-	      final Set<BufferedFileObject> compUnit = new HashSet<BufferedFileObject>();
-       compUnit.add(new BufferedFileObject(name, source));
-	      final JavaCompiler compiler = getSystemJavaCompiler();
-	      final Writer log = logStream == null ? new StringWriter() : new OutputStreamWriter(logStream);
-	      return compiler.getTask(log, manager, null, null, null, compUnit).call();
-	}
 }

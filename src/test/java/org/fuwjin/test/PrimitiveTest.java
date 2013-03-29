@@ -8,10 +8,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.fuwjin.compile.RuntimeClassLoader;
 import org.fuwjin.generic.Generic;
 import org.fuwjin.generic.GenericTypeLiteral;
 import org.fuwjin.generic.Generics;
-import org.fuwjin.util.RuntimeClassLoader;
 import org.junit.Test;
 
 public class PrimitiveTest {
@@ -118,7 +118,7 @@ public class PrimitiveTest {
 	}
 
 	private boolean isAssignable(Field from, Field to) {
-		return new RuntimeClassLoader().compile("TestCompile","class TestCompile{"+toString(to.getGenericType())+" m("+toString(from.getGenericType())+" v){return v;}}", null);
+		return new RuntimeClassLoader().compile("TestCompile","class TestCompile{"+toString(to.getGenericType())+" m("+toString(from.getGenericType())+" v){return v;}}");
 	}
 
 	private String toString(Type t) {
