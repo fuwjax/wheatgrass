@@ -64,17 +64,6 @@ public abstract class AbstractGenericAction implements GenericAction {
 	}
 	
 	@Override
-	public GenericValue rawValue(Object... arguments) throws Exception {
-		for(int i=0;i<arguments.length;i++){
-			if(arguments[i] instanceof GenericValue){
-				GenericValue value = (GenericValue)arguments[i];
-				arguments[i] = value.value();
-			}
-		}
-		return doValue(arguments);
-	}
-	
-	@Override
 	public GenericValue value(GenericValue... arguments) throws Exception {
 		Object[] args = new Object[arguments.length];
 		for(int i=0;i<arguments.length;i++){

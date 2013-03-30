@@ -5,8 +5,6 @@ import java.lang.reflect.AnnotatedElement;
 public interface GenericAction {
 	public GenericValue value(GenericValue... arguments) throws Exception;
 
-	public GenericValue rawValue(Object... arguments) throws Exception;
-	
 	public GenericAction call(Generic... parameters) throws Exception;
 	
 	public Generic type();
