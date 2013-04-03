@@ -64,12 +64,13 @@ public class RuntimeClassLoader extends ClassLoader {
    }
    
    public boolean compile(final Path root) throws IOException{
-      final Set<BinarySourceFileObject> compUnit = new HashSet<BinarySourceFileObject>();
+      final Set<SourceFileObject> compUnit = new HashSet<SourceFileObject>();
    	Files.walkFileTree(root, new SimpleFileVisitor<Path>(){
 			@Override
          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				if(file.endsWith(".java")){
-					compUnit.add(new BinarySourceFileObject(root.relativize(file).toString(), Files.readAllBytes(file)));
+				if(file.toString().endsWith(".java")){
+					String name = root.relativize(file).toString();
+					compUnit.add(new SourceFileObject(name.substring(0, name.length() - 5), new String(Files.readAllBytes(file))));
 				}
 	         return FileVisitResult.CONTINUE;
          }
