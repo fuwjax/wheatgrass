@@ -1,6 +1,5 @@
 package org.fuwjin.generic;
 
-import org.fuwjin.test.PrimitiveTest;
 import org.fuwjin.util.FilterSet;
 
 
@@ -51,7 +50,7 @@ public class PrimitiveType implements Generic{
 	
 	@Override
 	public boolean contains(Generic type) {
-		return type instanceof PrimitiveTest && getRawType().equals(type.getRawType());
+		return type instanceof PrimitiveType && getRawType().equals(type.getRawType());
 	}
 	
 	@Override
