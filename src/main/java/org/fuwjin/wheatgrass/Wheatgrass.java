@@ -275,4 +275,8 @@ public final class Wheatgrass {
 		}
 		return array;
 	}
+
+	public static <T> Key<T> keyOf(String name, Class<T> type) {
+	   return keyOf(type, named(name));
+   }
 }
