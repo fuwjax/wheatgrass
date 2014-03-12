@@ -70,7 +70,7 @@ public abstract class Injector {
 	public <T> T get(Key<T> key) throws Exception {
 		return bind(key).get(this);
 	}
-
+	
 	/**
 	 * Returns a provider for the type {@code type}. Equivalent to
 	 * {@code bind(type).provide(this)}.
