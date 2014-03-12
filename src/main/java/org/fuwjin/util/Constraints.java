@@ -29,6 +29,7 @@ public class Constraints {
 	}
 
 	// logical OR
+	@SafeVarargs
 	public static <T> Constraint<T> anyOf(final Constraint<T>... constraints){
 		return new Constraint<T>(){
 			@Override
@@ -44,6 +45,7 @@ public class Constraints {
 	}
 
 	// logical NOR
+	@SafeVarargs
 	public static <T> Constraint<T> noneOf(final Constraint<T>... constraints){
 		return new Constraint<T>(){
 			@Override
@@ -59,6 +61,7 @@ public class Constraints {
 	}
 
 	// logical AND
+	@SafeVarargs
 	public static <T> Constraint<T> allOf(final Constraint<T>... constraints){
 		return new Constraint<T>(){
 			@Override
@@ -74,6 +77,7 @@ public class Constraints {
 	}
 
 	// logical XOR
+	@SafeVarargs
 	public static <T> Constraint<T> oneOf(final Constraint<T>... constraints){
 		return new Constraint<T>(){
 			@Override

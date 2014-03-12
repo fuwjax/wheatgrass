@@ -1,5 +1,6 @@
 package org.fuwjin.generic;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -30,6 +31,13 @@ public abstract class AbstractGenericAction implements GenericAction {
 			}
 		};
 		public abstract Object[] fixArgs(Generic[] parameters, Object[] arguments);
+	}
+	
+	public static <T extends AccessibleObject> T access(T obj){
+		if(!obj.isAccessible()){
+			obj.setAccessible(true);
+		}
+		return obj;
 	}
 
 	private Generic type;

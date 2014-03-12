@@ -27,6 +27,14 @@ public class FilterSet<T> extends AbstractSet<T>{
 		return new FilterSet<T>(constraint, set);
 	}
 	
+	public T first(){
+		Iterator<T> iter = iterator();
+		if(iter.hasNext()){
+			return iter.next();
+		}
+		return null;
+	}
+	
 	@Override
 	public boolean add(T e) {
 		if(!constraint.satisfies(e)){

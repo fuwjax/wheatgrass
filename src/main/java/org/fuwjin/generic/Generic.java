@@ -5,6 +5,14 @@ import org.fuwjin.util.FilterSet;
 public interface Generic {
 	Class<?> getRawType();
 	
+	Generic[] arguments();
+	
+	Generic component();
+	
+	Generic box();
+	
+	Generic array();
+	
 	Generic supertype();
 	
 	Generic[] interfaces();
@@ -12,8 +20,6 @@ public interface Generic {
 	boolean isAssignableTo(Generic type);
 	
 	boolean contains(Generic type);
-	
-	boolean isInstance(Object object);
 	
 	FilterSet<GenericAction> actions();
 	

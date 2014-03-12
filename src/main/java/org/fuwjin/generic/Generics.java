@@ -126,4 +126,8 @@ public class Generics {
 		}
 		return arr;
 	}
+
+	public static GenericValue valueOf(Object value) {
+		return genericOf(value.getClass()).valueOf(value);
+	}
 }

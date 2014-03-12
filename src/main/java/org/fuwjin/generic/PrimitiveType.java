@@ -74,7 +74,9 @@ public class PrimitiveType implements Generic{
 	@Override
 	public GenericValue valueOf(final Object value) {
 		if(!isInstance(value)){
-			throw new IllegalArgumentException("Unexpected value: "+value);
+			if(!void.class.equals(cls) || value != null){
+				throw new IllegalArgumentException("Unexpected value: "+value);
+			}
 		}
 		return new AbstractGenericValue(this, value){
 			@Override

@@ -17,7 +17,7 @@ public class StaticFieldAccessAction extends AbstractGenericAction {
 
 	@Override
 	public Object valueImpl(Object... arguments) throws Exception {
-		return field.get(null);
+		return access(field).get(null);
 	}
 
 	@Override

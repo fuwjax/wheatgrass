@@ -19,7 +19,7 @@ public class InstanceFieldAccessAction extends AbstractGenericAction {
 
 	@Override
 	public Object valueImpl(Object... arguments) throws Exception {
-		return field.get(value);
+		return access(field).get(value);
 	}
 
 	@Override

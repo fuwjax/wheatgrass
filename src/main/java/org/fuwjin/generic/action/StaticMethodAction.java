@@ -17,7 +17,7 @@ public class StaticMethodAction extends AbstractGenericAction {
 
 	@Override
 	public Object valueImpl(Object... arguments) throws Exception {
-		return method.invoke(null, arguments);
+		return access(method).invoke(null, arguments);
 	}
 	
 	@Override

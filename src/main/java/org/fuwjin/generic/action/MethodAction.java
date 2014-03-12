@@ -27,7 +27,7 @@ public class MethodAction extends AbstractGenericAction {
 	public Object valueImpl(Object... arguments) throws Exception {
 		Object self = arguments[0];
 		Object[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
-		return method.invoke(self, args);
+		return access(method).invoke(self, args);
 	}
 
 	@Override

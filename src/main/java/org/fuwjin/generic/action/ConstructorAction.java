@@ -18,7 +18,7 @@ public class ConstructorAction extends AbstractGenericAction {
 
 	@Override
 	public Object valueImpl(Object... arguments) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		return cons.newInstance(arguments);
+		return access(cons).newInstance(arguments);
 	}
 
 	@Override

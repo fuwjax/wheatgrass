@@ -6,20 +6,20 @@ import java.lang.reflect.Field;
 import org.fuwjin.generic.AbstractGenericAction;
 import org.fuwjin.generic.Generic;
 import org.fuwjin.generic.GenericType;
+import org.fuwjin.generic.Generics;
 
 public class StaticFieldMutateAction extends AbstractGenericAction {
 	private Field field;
 
 	public StaticFieldMutateAction(GenericType type, Field field, Generic value) {
-		super(value, value);
+		super(Generics.VOID, value);
 		this.field = field;
 	}
 
 	@Override
 	public Object valueImpl(Object... arguments) throws Exception {
-		Object value = field.get(null);
-		field.set(null, arguments[0]);
-		return value;
+		access(field).set(null, arguments[0]);
+		return null;
 	}
 
 	@Override

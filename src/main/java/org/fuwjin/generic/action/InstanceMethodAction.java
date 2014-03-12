@@ -19,7 +19,7 @@ public class InstanceMethodAction extends AbstractGenericAction {
 
 	@Override
 	public Object valueImpl(Object... arguments) throws Exception {
-		return method.invoke(value, arguments);
+		return access(method).invoke(value, arguments);
 	}
 
 	@Override
